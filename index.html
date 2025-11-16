@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graphique Paramétrable</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 1.5rem;
+        background: radial-gradient(circle at top left, #eff6ff, #ffffff) fixed;
+        min-height: 100vh;
+        color: #0f172a;
+      }
+
+      h1 {
+        margin: 0 0 1rem;
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+      }
+
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+        backdrop-filter: blur(4px);
+      }
+
+      form {
+        display: grid;
+        gap: 1rem;
+      }
+
+      fieldset {
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        border-radius: 0.75rem;
+        padding: 1rem 1.2rem;
+        background: rgba(248, 250, 252, 0.8);
+      }
+
+      legend {
+        padding: 0 0.4rem;
+        font-weight: 600;
+        color: #1d4ed8;
+      }
+
+      .input-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+        gap: 0.25rem;
+        color: #334155;
+      }
+
+      input,
+      select,
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      input,
+      select,
+      textarea {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        padding: 0.45rem 0.6rem;
+        background: rgba(255, 255, 255, 0.9);
+        color: inherit;
+      }
+
+      textarea {
+        min-height: 4rem;
+        resize: vertical;
+      }
+
+      button {
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        border: none;
+        font-weight: 600;
+        background: linear-gradient(135deg, #1d4ed8, #2563eb, #60a5fa);
+        color: white;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 20px -12px rgba(37, 99, 235, 0.8);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .output {
+        margin: 2rem 0 0;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .status {
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        background: rgba(37, 99, 235, 0.1);
+        color: #1d4ed8;
+        font-size: 0.95rem;
+      }
+
+      .status.error {
+        background: rgba(220, 38, 38, 0.11);
+        color: #dc2626;
+      }
+
+      .figure-wrapper {
+        display: grid;
+        justify-items: center;
+      }
+
+      .figure-wrapper img {
+        max-width: 100%;
+        border-radius: 0.75rem;
+        box-shadow: 0 25px 50px -20px rgba(15, 23, 42, 0.45);
+        background: white;
+      }
+
+      .helper {
+        font-size: 0.85rem;
+        color: #475569;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Générateur de graphique paramétrable</h1>
+      <p class="helper">
+        Décrivez une fonction en Python/Numpy (ex. <code>sin(2 * pi * x)</code>) et ajustez l’intervalle,
+        le nombre d’échantillons ou le style de la courbe. Le graphe est rendu côté serveur avec Matplotlib.
+      </p>
+
+      <form id="plot-form">
+        <fieldset>
+          <legend>Fonction</legend>
+          <label>
+            Expression (Python + NumPy)
+            <textarea name="expression" required>sin(2 * pi * x)</textarea>
+          </label>
+          <p class="helper">
+            Fonctions acceptées: <code>sin</code>, <code>cos</code>, <code>tan</code>, <code>exp</code>, <code>log</code>,
+            etc. Utilisez la variable <code>x</code> et les constantes <code>pi</code>, <code>e</code>.
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Domaine et précision</legend>
+          <div class="input-grid">
+            <label>
+              x min
+              <input type="number" step="any" name="xMin" value="-6.28318" required />
+            </label>
+            <label>
+              x max
+              <input type="number" step="any" name="xMax" value="6.28318" required />
+            </label>
+            <label>
+              Échantillons
+              <input type="number" name="samples" value="500" min="2" max="10000" required />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Apparence</legend>
+          <div class="input-grid">
+            <label>
+              Couleur
+              <input type="color" name="color" value="#2563eb" />
+            </label>
+            <label>
+              Épaisseur
+              <input type="number" name="lineWidth" step="0.1" value="2" min="0.1" max="10" />
+            </label>
+            <label>
+              Marqueur
+              <select name="marker">
+                <option value="">Aucun</option>
+                <option value="o">Rond</option>
+                <option value="s">Carré</option>
+                <option value="^">Triangle</option>
+                <option value="x">Croix</option>
+              </select>
+            </label>
+            <label>
+              Grille
+              <select name="grid">
+                <option value="true" selected>Oui</option>
+                <option value="false">Non</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Annotations</legend>
+          <div class="input-grid">
+            <label>
+              Titre
+              <input type="text" name="title" value="Courbe paramétrable" />
+            </label>
+            <label>
+              Label axe X
+              <input type="text" name="xLabel" value="x" />
+            </label>
+            <label>
+              Label axe Y
+              <input type="text" name="yLabel" value="f(x)" />
+            </label>
+          </div>
+        </fieldset>
+
+        <button type="submit">Tracer le graphique</button>
+      </form>
+
+      <div class="output">
+        <div id="status" class="status" hidden></div>
+        <div class="figure-wrapper" id="plot-wrapper" hidden>
+          <img id="plot-image" alt="Graphique généré" />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("plot-form");
+      const statusEl = document.getElementById("status");
+      const plotWrapper = document.getElementById("plot-wrapper");
+      const plotImage = document.getElementById("plot-image");
+
+      const API_BASE =
+        window.location.port === "8000" ? "http://127.0.0.1:8001" : window.location.origin;
+
+      async function fetchPlot(payload) {
+        const response = await fetch(`${API_BASE}/api/plot`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          const message = data.error || `Erreur ${response.status}`;
+          throw new Error(message);
+        }
+        return response.json();
+      }
+
+      function showStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle("error", isError);
+        statusEl.hidden = false;
+      }
+
+      function hideStatus() {
+        statusEl.hidden = true;
+      }
+
+      async function handleSubmit(event) {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+        payload.grid = payload.grid === "true";
+        payload.lineWidth = parseFloat(payload.lineWidth);
+        payload.samples = Number(payload.samples);
+        payload.xMin = Number(payload.xMin);
+        payload.xMax = Number(payload.xMax);
+
+        showStatus("Génération du graphique en cours…");
+        plotWrapper.hidden = true;
+        form.querySelector("button[type='submit']").disabled = true;
+
+        try {
+          const data = await fetchPlot(payload);
+          hideStatus();
+          plotImage.src = data.image;
+          plotWrapper.hidden = false;
+        } catch (error) {
+          showStatus(error.message, true);
+        } finally {
+          form.querySelector("button[type='submit']").disabled = false;
+        }
+      }
+
+      form.addEventListener("submit", handleSubmit);
+
+      async function loadDefaultPlot() {
+        try {
+          showStatus("Chargement du graphique par défaut…");
+          const response = await fetch(`${API_BASE}/api/plot`);
+          if (!response.ok) {
+            throw new Error(`Erreur ${response.status}`);
+          }
+          const data = await response.json();
+          hideStatus();
+          plotImage.src = data.image;
+          plotWrapper.hidden = false;
+        } catch (error) {
+          showStatus(error.message, true);
+        }
+      }
+
+      loadDefaultPlot();
+    </script>
+  </body>
+</html>
